@@ -1,45 +1,59 @@
--- Crear la tabla maintenance
-CREATE TABLE IF NOT EXISTS mantenimiento (
-                                             id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                             technician_id BIGINT,
-                                             maintenance_date DATE,
-                                             issue_reported VARCHAR(255),
-    scooter_id BIGINT,
-    status VARCHAR(50)
+-- Eliminar la base de datos si existe
+DROP DATABASE IF EXISTS scooter_maintenance;
+
+-- Crear la base de datos
+CREATE DATABASE IF NOT EXISTS scooter_maintenance;
+USE scooter_maintenance;
+
+-- Eliminar las tablas si ya existen
+DROP TABLE IF EXISTS MANTENIMIENTO;
+DROP TABLE IF EXISTS TECNICO;
+
+-- Crear la tabla TECNICO
+CREATE TABLE IF NOT EXISTS TECNICO (
+                                       id INT AUTO_INCREMENT PRIMARY KEY,
+                                       name VARCHAR(255) NOT NULL
     );
 
--- Crear la tabla technician
-CREATE TABLE IF NOT EXISTS technician (
-                                          id BIGINT AUTO_INCREMENT PRIMARY KEY,
-                                          name VARCHAR(255),
-    specialization VARCHAR(50)
+-- Crear la tabla MANTENIMIENTO
+CREATE TABLE IF NOT EXISTS MANTENIMIENTO (
+                                             id INT AUTO_INCREMENT PRIMARY KEY,
+                                             tecnicoId INT NULL,
+                                             scooter_id INT NOT NULL,
+                                             enter_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                             finish_date TIMESTAMP NULL,
+                                             status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED') NOT NULL,
+    FOREIGN KEY (tecnicoId) REFERENCES TECNICO(id)
     );
 
--- Insertar datos iniciales en technician
-INSERT INTO technician (name, specialization) VALUES ('John Doe', 'ELECTRICAL');
-INSERT INTO technician (name, specialization) VALUES ('Jane Smith', 'MECHANICAL');
-INSERT INTO technician (name, specialization) VALUES ('Mike Johnson', 'SOFTWARE');
-INSERT INTO technician (name, specialization) VALUES ('Anna White', 'BODYWORK');
-INSERT INTO technician (name, specialization) VALUES ('Chris Brown', 'ELECTRICAL');
+-- Crear un trigger que actualiza automáticamente finish_date cuando el status es COMPLETED
+DELIMITER //
+CREATE TRIGGER set_finish_date
+    BEFORE UPDATE ON MANTENIMIENTO
+    FOR EACH ROW
+BEGIN
+    IF NEW.status = 'COMPLETED' AND OLD.status <> 'COMPLETED' THEN
+        SET NEW.finish_date = CURRENT_TIMESTAMP;
+END IF;
+END;
+//
+DELIMITER ;
 
--- Insertar datos iniciales en mantenimiento
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (1, '2024-10-01', 'ELECTRICAL_FAILURE', 101, 'PENDING');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (2, '2024-10-02', 'MECHANICAL_FAILURE', 102, 'IN_PROGRESS');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (3, '2024-10-03', 'SOFTWARE_GLITCH', 103, 'PENDING');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (4, '2024-10-04', 'BODY_DAMAGE', 104, 'COMPLETED');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (5, '2024-10-05', 'ELECTRICAL_FAILURE', 105, 'IN_PROGRESS');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (1, '2024-10-06', 'MECHANICAL_FAILURE', 106, 'PENDING');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (2, '2024-10-07', 'ELECTRICAL_FAILURE', 107, 'COMPLETED');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (3, '2024-10-08', 'SOFTWARE_GLITCH', 108, 'CANCELLED');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (4, '2024-10-09', 'BODY_DAMAGE', 109, 'IN_PROGRESS');
-INSERT INTO mantenimiento (technician_id, maintenance_date, issue_reported, scooter_id, status)
-VALUES (5, '2024-10-10', 'MECHANICAL_FAILURE', 110, 'PENDING');
+-- Insertar datos en la tabla TECNICO
+INSERT INTO TECNICO (name) VALUES
+                               ('Juan Pérez'),
+                               ('Ana Gómez'),
+                               ('Carlos Ramírez');
+
+-- Insertar datos en la tabla MANTENIMIENTO
+-- Mantenimiento con tecnicoId = NULL, finish_date = NULL, status = PENDING
+INSERT INTO MANTENIMIENTO (tecnicoId, scooter_id, enter_date, finish_date, status)
+VALUES (NULL, 1, CURRENT_TIMESTAMP, NULL, 'PENDING');
+
+-- Mantenimiento con tecnicoId = 2, finish_date = NULL, status = IN_PROGRESS
+INSERT INTO MANTENIMIENTO (tecnicoId, scooter_id, enter_date, finish_date, status)
+VALUES (2, 2, CURRENT_TIMESTAMP, NULL, 'IN_PROGRESS');
+
+-- Mantenimiento con tecnicoId = 2, finish_date != NULL, status = COMPLETED
+INSERT INTO MANTENIMIENTO (tecnicoId, scooter_id, enter_date, finish_date, status)
+VALUES (2, 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'COMPLETED');
