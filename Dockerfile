@@ -8,11 +8,7 @@ RUN mvn clean package -DskipTests
 FROM openjdk:21-jdk-slim
 WORKDIR /app
 
-# Instalar netcat-openbsd en la imagen slim
-RUN apt-get update && apt-get install -y netcat-openbsd
-
 COPY --from=build /app/target/*.jar app.jar
-COPY wait-for-it.sh ./
-RUN chmod +x wait-for-it.sh
+
 EXPOSE 3003
-ENTRYPOINT ["./wait-for-it.sh", "db", "3307", "--", "java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
